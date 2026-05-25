@@ -42,7 +42,9 @@ const genericAlgorithms: Array<{ value: GenericAlgorithm; label: string }> = [
   { value: 'lzw', label: 'Lempel-Ziv-Welch (LZW)' },
   { value: 'arithmetic', label: 'Arithmetic Coding (Optimal Entropy)' },
 ]
-
+/**
+ * Displays user-configurable settings based on the selected file category.
+ */
 export function CompressionSettings({
   category,
   request,

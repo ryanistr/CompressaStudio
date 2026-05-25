@@ -10,6 +10,9 @@ interface ActionPanelProps {
   onClear: () => void
 }
 
+/**
+ * Renders the main action buttons (Choose File, Compress, Decompress, Clear).
+ */
 export function ActionPanel({
   canCompress,
   canDecompress,

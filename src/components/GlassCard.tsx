@@ -8,6 +8,9 @@ interface GlassCardProps extends PropsWithChildren {
   aside?: ReactNode
 }
 
+/**
+ * A reusable glassmorphic card container component.
+ */
 export function GlassCard({ id, title, subtitle, className, aside, children }: GlassCardProps) {
   return (
     <section id={id} className={`glass-panel panel ${className ?? ''}`.trim()}>

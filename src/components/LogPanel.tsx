@@ -5,6 +5,9 @@ interface LogPanelProps {
   logs: LogEntry[]
 }
 
+/**
+ * Displays a scrolling list of application logs and status messages.
+ */
 export function LogPanel({ logs }: LogPanelProps) {
   return (
     <GlassCard
