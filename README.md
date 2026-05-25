@@ -37,4 +37,30 @@ When a non-media file (like `.txt`, `.docx`, `.bin`) is selected, the app switch
 1. **Select a File**: Click the central file selection box (or click on any compression mode tile) to browse and select the file you want to compress.
 2. **Configure Settings**: Based on the file type, adjust the settings panel on the right (e.g., Quality Preset, Algorithm Choice).
 3. **Compress**: Click the "Run Compression" button. The app will process the file natively in Rust and display real-time statistics (e.g., Space Saved, Compression Ratio).
-4. **Decompress**: For lossless files (like `.zst`, `.huff`, `.lz77`, etc.), selecting the compressed file automatically switches the app into Decompression mode. Just click "Decompress File" to restore the original perfectly.
+4. **Decompress**: Select a supported generic lossless output, then click **Decompress File**. The app restores the original byte stream when the selected file was produced by one of the supported lossless compressors.
+
+## Decompression Workflow
+
+Decompression is only available for generic lossless outputs created by Compressa Studio. Image, video, and PDF outputs are optimized media/document files and are not reversible through the Decompress button.
+
+Supported decompression inputs:
+
+- `.zst` - Zstandard dictionary/statistical compression.
+- `.rle` - Educational Run-Length Encoding.
+- `.shnc` - Educational Shannon Coding.
+- `.sfc` - Educational Shannon-Fano Coding.
+- `.huff` - Educational Huffman Coding.
+- `.lz77` - Educational LZ77.
+- `.lz78` - Educational LZ78.
+- `.lzw` - Educational LZW.
+- `.arith` - Educational Arithmetic Coding.
+
+How it works:
+
+1. Choose a supported compressed file. The app detects the extension and enables the Decompress action.
+2. Click **Decompress File**. The backend routes the file to the matching decoder.
+3. The restored file is written next to the compressed file. If the original output name already exists, the app creates a numbered restored filename.
+4. When a sidecar metadata file exists, for example `example.txt.zst.meta.json`, the app reads the original SHA-256 and verifies the restored output.
+5. The statistics panel reports the output path, checksum result, elapsed time, and restored size.
+
+If no metadata sidecar is present, decompression can still run for supported formats, but checksum verification will be reported as unavailable.
