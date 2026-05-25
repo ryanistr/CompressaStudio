@@ -1,3 +1,7 @@
+//! Native Dict module.
+//!
+//! Handles native dict operations.
+
 use super::{
     create_metadata, infer_restored_output_path, metadata_path_for, read_metadata, write_metadata,
     CompressionMetadata, CompressionOutcome,
@@ -12,8 +16,13 @@ const LZ77_HEADER: &[u8] = b"COMPRESSA_LZ77_V1";
 const LZ78_HEADER: &[u8] = b"COMPRESSA_LZ78_V1";
 const LZW_HEADER: &[u8] = b"COMPRESSA_LZW__V1";
 
+const HASH_TABLE_SIZE: usize = 65536;
+const HASH_MASK: usize = 65535;
+const CHAIN_LIMIT: usize = 100;
+
 // --- LZ77 ---
 
+/// Compress Lz77.
 pub fn compress_lz77(input_path: &Path) -> Result<CompressionOutcome> {
     let input = fs::read(input_path).with_context(|| {
         format!("Unable to read input file for LZ77: {}", input_path.display())
@@ -41,6 +50,7 @@ pub fn compress_lz77(input_path: &Path) -> Result<CompressionOutcome> {
     })
 }
 
+/// Decompress Lz77.
 pub fn decompress_lz77(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     let mut source = File::open(input_path)
         .with_context(|| format!("Unable to open LZ77 file: {}", input_path.display()))?;
@@ -74,15 +84,15 @@ fn encode_lz77(input: &[u8]) -> Vec<u8> {
     let mut encoded = Vec::new();
     let mut pos = 0;
     
-    let mut head = vec![usize::MAX; 65536];
-    let mut prev = vec![usize::MAX; 65536];
+    let mut head = vec![usize::MAX; HASH_TABLE_SIZE];
+    let mut prev = vec![usize::MAX; HASH_TABLE_SIZE];
     
     fn hash(bytes: &[u8]) -> usize {
         let mut h = 0usize;
         h = h.wrapping_add(bytes[0] as usize);
         h = h.wrapping_shl(5) ^ bytes[1] as usize;
         h = h.wrapping_shl(5) ^ bytes[2] as usize;
-        h & 0xFFFF
+        h & HASH_MASK
     }
     
     while pos < input.len() {
@@ -93,8 +103,8 @@ fn encode_lz77(input: &[u8]) -> Vec<u8> {
         if lookahead_len >= 3 {
             let h = hash(&input[pos..pos+3]);
             let mut curr = head[h];
-            let mut limit = 100;
-            while curr != usize::MAX && pos.saturating_sub(curr) <= 65535 && limit > 0 {
+            let mut limit = CHAIN_LIMIT;
+            while curr != usize::MAX && pos.saturating_sub(curr) <= HASH_MASK && limit > 0 {
                 if curr >= pos { break; }
                 let mut match_len = 0;
                 while match_len < lookahead_len && input[curr + match_len] == input[pos + match_len] {
@@ -105,7 +115,7 @@ fn encode_lz77(input: &[u8]) -> Vec<u8> {
                     best_offset = pos - curr;
                     if best_len == lookahead_len { break; }
                 }
-                curr = prev[curr % 65536];
+                curr = prev[curr % HASH_TABLE_SIZE];
                 limit -= 1;
             }
         }
@@ -125,7 +135,7 @@ fn encode_lz77(input: &[u8]) -> Vec<u8> {
             let p = pos + i;
             if p + 2 < input.len() {
                 let h = hash(&input[p..p+3]);
-                prev[p % 65536] = head[h];
+                prev[p % HASH_TABLE_SIZE] = head[h];
                 head[h] = p;
             }
         }
@@ -160,6 +170,7 @@ fn decode_lz77(input: &[u8], original_len: usize) -> Result<Vec<u8>> {
 
 // --- LZ78 ---
 
+/// Compress Lz78.
 pub fn compress_lz78(input_path: &Path) -> Result<CompressionOutcome> {
     let input = fs::read(input_path).context("Unable to read input file for LZ78")?;
     let encoded = encode_lz78(&input);
@@ -184,6 +195,7 @@ pub fn compress_lz78(input_path: &Path) -> Result<CompressionOutcome> {
     })
 }
 
+/// Decompress Lz78.
 pub fn decompress_lz78(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     let mut source = File::open(input_path).context("Unable to open LZ78 file")?;
     let mut raw = Vec::new();
@@ -267,6 +279,7 @@ fn decode_lz78(input: &[u8], original_len: usize) -> Result<Vec<u8>> {
 
 // --- LZW ---
 
+/// Compress Lzw.
 pub fn compress_lzw(input_path: &Path) -> Result<CompressionOutcome> {
     let input = fs::read(input_path).context("Unable to read input file for LZW")?;
     let encoded = encode_lzw(&input);
@@ -291,6 +304,7 @@ pub fn compress_lzw(input_path: &Path) -> Result<CompressionOutcome> {
     })
 }
 
+/// Decompress Lzw.
 pub fn decompress_lzw(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     let mut source = File::open(input_path).context("Unable to open LZW file")?;
     let mut raw = Vec::new();

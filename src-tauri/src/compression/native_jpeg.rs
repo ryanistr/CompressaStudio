@@ -1,3 +1,7 @@
+//! Native Jpeg module.
+//!
+//! Handles native jpeg operations.
+
 use super::{
     create_metadata, metadata_path_for, unique_output_path, write_metadata, CompressionOutcome,
     CompressionRequest, QualityPreset,
@@ -6,6 +10,9 @@ use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
+const BLOCK_SIZE: usize = 8;
+const BLOCK_AREA: usize = 64;
 
 const ZIGZAG: [usize; 64] = [
     0,  1,  8, 16,  9,  2,  3, 10,
@@ -153,18 +160,18 @@ fn value_to_bits(val: i32) -> (u8, u32) {
 }
 
 fn forward_dct_quantize(block: &[f32; 64], quant_table: &[u32; 64], cos_table: &[[f32; 8]; 8]) -> [i32; 64] {
-    let mut out = [0; 64];
-    for rank in 0..64 {
+    let mut out = [0; BLOCK_AREA];
+    for rank in 0..BLOCK_AREA {
         let idx = ZIGZAG[rank];
-        let v = idx / 8;
-        let u = idx % 8;
+        let v = idx / BLOCK_SIZE;
+        let u = idx % BLOCK_SIZE;
         
         let mut sum = 0.0;
-        for y in 0..8 {
-            for x in 0..8 {
+        for y in 0..BLOCK_SIZE {
+            for x in 0..BLOCK_SIZE {
                 let cos_x = cos_table[x][u];
                 let cos_y = cos_table[y][v];
-                sum += block[y * 8 + x] * cos_x * cos_y;
+                sum += block[y * BLOCK_SIZE + x] * cos_x * cos_y;
             }
         }
         let cu = if u == 0 { std::f32::consts::FRAC_1_SQRT_2 } else { 1.0 };
@@ -235,6 +242,7 @@ fn write_dht(out: &mut Vec<u8>, class_id: u8, bits: &[u8; 16], vals: &[u8]) {
     out.extend_from_slice(vals);
 }
 
+/// Compress Native Jpeg.
 pub fn compress_native_jpeg(
     input_path: &Path,
     request: &CompressionRequest,

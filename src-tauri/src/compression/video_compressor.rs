@@ -1,9 +1,25 @@
+//! Video Compressor module.
+//!
+//! Handles video compressor operations.
+
 use super::{unique_output_path, CompressionOutcome, CompressionRequest, QualityPreset};
 use crate::tool_detection::detect_tools;
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use std::process::Command;
 
+const CRF_HIGH_QUALITY: &str = "21";
+const CRF_BALANCED: &str = "28";
+const CRF_SMALL_SIZE: &str = "32";
+
+const SPEED_SLOW: &str = "slow";
+const SPEED_MEDIUM: &str = "medium";
+
+const BITRATE_HIGH: &str = "160k";
+const BITRATE_BALANCED: &str = "128k";
+const BITRATE_SMALL: &str = "96k";
+
+/// Compress Video.
 pub fn compress_video(
     input_path: &Path,
     request: &CompressionRequest,
@@ -22,9 +38,9 @@ pub fn compress_video(
     let output_path = unique_output_path(parent, &format!("{stem}_compressed"), "mp4");
 
     let (crf, speed, audio_bitrate) = match preset {
-        QualityPreset::HighQuality => ("21", "slow", "160k"),
-        QualityPreset::Balanced => ("28", "medium", "128k"),
-        QualityPreset::SmallSize => ("32", "medium", "96k"),
+        QualityPreset::HighQuality => (CRF_HIGH_QUALITY, SPEED_SLOW, BITRATE_HIGH),
+        QualityPreset::Balanced => (CRF_BALANCED, SPEED_MEDIUM, BITRATE_BALANCED),
+        QualityPreset::SmallSize => (CRF_SMALL_SIZE, SPEED_MEDIUM, BITRATE_SMALL),
     };
 
     let status = Command::new("ffmpeg")

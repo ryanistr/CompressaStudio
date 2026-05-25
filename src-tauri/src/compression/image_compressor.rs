@@ -1,3 +1,7 @@
+//! Image Compressor module.
+//!
+//! Handles image compressor operations.
+
 use super::{unique_output_path, CompressionOutcome, CompressionRequest, QualityPreset};
 use anyhow::{Context, Result};
 use image::codecs::jpeg::JpegEncoder;
@@ -8,6 +12,14 @@ use std::io::BufWriter;
 use std::path::Path;
 use webp::Encoder;
 
+const QUALITY_HIGH: f32 = 88.0;
+const QUALITY_BALANCED_WEBP: f32 = 78.0;
+const QUALITY_SMALL_WEBP: f32 = 62.0;
+
+const QUALITY_BALANCED_JPEG_FALLBACK: f32 = 76.0;
+const QUALITY_SMALL_JPEG_FALLBACK: f32 = 58.0;
+
+/// Compress Image.
 pub fn compress_image(
     input_path: &Path,
     request: &CompressionRequest,
@@ -94,17 +106,17 @@ fn choose_output_format(has_alpha: bool, preset: QualityPreset) -> OutputFormat 
     if has_alpha {
         return OutputFormat::Webp {
             quality: match preset {
-                QualityPreset::HighQuality => 88.0,
-                QualityPreset::Balanced => 78.0,
-                QualityPreset::SmallSize => 62.0,
+                QualityPreset::HighQuality => QUALITY_HIGH,
+                QualityPreset::Balanced => QUALITY_BALANCED_WEBP,
+                QualityPreset::SmallSize => QUALITY_SMALL_WEBP,
             },
         };
     }
 
     match preset {
-        QualityPreset::HighQuality => OutputFormat::Jpeg { quality: 88.0 },
-        QualityPreset::Balanced => OutputFormat::Webp { quality: 76.0 },
-        QualityPreset::SmallSize => OutputFormat::Webp { quality: 58.0 },
+        QualityPreset::HighQuality => OutputFormat::Jpeg { quality: QUALITY_HIGH },
+        QualityPreset::Balanced => OutputFormat::Webp { quality: QUALITY_BALANCED_JPEG_FALLBACK },
+        QualityPreset::SmallSize => OutputFormat::Webp { quality: QUALITY_SMALL_JPEG_FALLBACK },
     }
 }
 
