@@ -1,10 +1,14 @@
 import { GlassCard } from './GlassCard'
 import type { StatsSnapshot } from '../types'
+import { formatSize } from '../utils'
 
 interface StatsPanelProps {
   stats: StatsSnapshot
 }
 
+/**
+ * Displays statistics about the current or last completed compression/decompression operation.
+ */
 export function StatsPanel({ stats }: StatsPanelProps) {
   return (
     <GlassCard
@@ -20,8 +24,8 @@ export function StatsPanel({ stats }: StatsPanelProps) {
           value={stats.lossless === undefined ? '-' : stats.lossless ? 'Yes' : 'No'}
           mono={false}
         />
-        <StatRow label="Original Size" value={formatSize(stats.originalSize)} mono={false} />
-        <StatRow label="Output Size" value={formatSize(stats.outputSize)} mono={false} />
+        <StatRow label="Original Size" value={formatSizeSafe(stats.originalSize)} mono={false} />
+        <StatRow label="Output Size" value={formatSizeSafe(stats.outputSize)} mono={false} />
         <StatRow label="Saved Size" value={formatSignedSize(stats.savedSize)} mono={false} />
         <StatRow label="Compression Ratio" value={formatPercent(stats.compressionRatio)} mono={false} />
         <StatRow label="Space Saved" value={formatPercent(stats.spaceSaved)} mono={false} />
@@ -59,21 +63,9 @@ function StatRow({ label, value, mono = false }: { label: string; value: string;
   )
 }
 
-function formatSize(value: number | undefined): string {
-  if (typeof value !== 'number') {
-    return '-'
-  }
-  if (value < 1024) {
-    return `${value} B`
-  }
-  const units = ['KB', 'MB', 'GB', 'TB']
-  let current = value / 1024
-  let unitIndex = 0
-  while (current >= 1024 && unitIndex < units.length - 1) {
-    current /= 1024
-    unitIndex += 1
-  }
-  return `${current.toFixed(2)} ${units[unitIndex]}`
+function formatSizeSafe(value: number | undefined): string {
+  if (typeof value !== 'number') return '-'
+  return formatSize(value)
 }
 
 function formatPercent(value: number | undefined): string {
@@ -84,5 +76,5 @@ function formatSignedSize(value: number | undefined): string {
   if (typeof value !== 'number') {
     return '-'
   }
-  return `${value >= 0 ? '' : '-'}${formatSize(Math.abs(value))}`
+  return `${value >= 0 ? '' : '-'}${formatSizeSafe(Math.abs(value))}`
 }

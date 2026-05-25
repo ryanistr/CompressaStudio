@@ -17,27 +17,32 @@ import type {
   StatsSnapshot,
   ToolAvailability,
 } from './types'
+import { timestampNow, toMessage } from './utils'
+import { STATUS_LABELS, DEFAULT_REQUEST } from './constants'
+import type { ReactNode } from 'react'
 
-const statusLabel: Record<AppStatus, string> = {
-  idle: 'Idle',
-  compressing: 'Compressing',
-  decompressing: 'Decompressing',
-  success: 'Success',
-  error: 'Error',
-}
-
-const defaultRequest: CompressionRequest = {
-  qualityPreset: 'balanced',
-  pdfPreset: 'ebook',
-  genericAlgorithm: 'zstd',
-  resizePercent: 100,
-  zstdLevel: 6,
+const QUICK_START_ICONS: Record<string, ReactNode> = {
+  auto: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+  ),
+  image: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+  ),
+  video: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+  ),
+  pdf: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H8v9"/><path d="M15 17v-8h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/></svg>
+  ),
+  generic: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+  )
 }
 
 function App() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null)
-  const [request, setRequest] = useState<CompressionRequest>(defaultRequest)
+  const [request, setRequest] = useState<CompressionRequest>(DEFAULT_REQUEST)
   const [status, setStatus] = useState<AppStatus>('idle')
   const [statusText, setStatusText] = useState('Ready for all-in-one compression.')
   const [stats, setStats] = useState<StatsSnapshot>({})
@@ -67,6 +72,13 @@ function App() {
       },
       ...previous,
     ])
+  }
+
+  function handleError(error: unknown, context: string) {
+    const msg = toMessage(error)
+    setStatus('error')
+    setStatusText(msg)
+    pushLog('error', `${context}: ${msg}`)
   }
 
   useEffect(() => {
@@ -105,10 +117,10 @@ function App() {
 
   async function handleChooseFile(mode?: FileCategory) {
     try {
-      let filters = undefined;
-      if (mode === 'image') filters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }];
-      else if (mode === 'video') filters = [{ name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'mov'] }];
-      else if (mode === 'pdf') filters = [{ name: 'PDF', extensions: ['pdf'] }];
+      let filters = undefined
+      if (mode === 'image') filters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
+      else if (mode === 'video') filters = [{ name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'mov'] }]
+      else if (mode === 'pdf') filters = [{ name: 'PDF', extensions: ['pdf'] }]
 
       const result = await open({
         title: 'Choose a file to compress or decompress',
@@ -136,10 +148,7 @@ function App() {
       })
       pushLog('success', `Selected ${info.fileName} as ${info.category} input.`)
     } catch (error) {
-      const messageText = toMessage(error)
-      setStatus('error')
-      setStatusText(messageText)
-      pushLog('error', `Failed to choose file: ${messageText}`)
+      handleError(error, 'Failed to choose file')
     }
   }
 
@@ -171,10 +180,7 @@ function App() {
         `${result.method} finished in ${result.elapsedMs} ms. Ratio ${result.compressionRatio.toFixed(2)}%.`,
       )
     } catch (error) {
-      const messageText = toMessage(error)
-      setStatus('error')
-      setStatusText(messageText)
-      pushLog('error', `Compression failed: ${messageText}`)
+      handleError(error, 'Compression failed')
     }
   }
 
@@ -205,10 +211,7 @@ function App() {
         `${result.method} restored ${result.outputPath}.`,
       )
     } catch (error) {
-      const messageText = toMessage(error)
-      setStatus('error')
-      setStatusText(messageText)
-      pushLog('error', `Decompression failed: ${messageText}`)
+      handleError(error, 'Decompression failed')
     }
   }
 
@@ -218,7 +221,7 @@ function App() {
     setStats({})
     setStatus('idle')
     setStatusText('Selection cleared.')
-    setRequest(defaultRequest)
+    setRequest(DEFAULT_REQUEST)
     pushLog('info', 'Cleared file selection and statistics.')
   }
 
@@ -236,7 +239,7 @@ function App() {
           </div>
           <div className={`status-badge status-${status}`}>
             <span className="status-dot" />
-            <span>{statusLabel[status]}</span>
+            <span>{STATUS_LABELS[status]}</span>
           </div>
         </header>
 
@@ -252,31 +255,31 @@ function App() {
             <div className="quick-start-grid">
               <button className="quick-start-card" onClick={() => handleChooseFile(undefined)}>
                 <span className="qs-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+                  {QUICK_START_ICONS.auto}
                 </span>
                 <span className="qs-title">Auto Detect</span>
               </button>
               <button className="quick-start-card" onClick={() => handleChooseFile('image')}>
                 <span className="qs-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  {QUICK_START_ICONS.image}
                 </span>
                 <span className="qs-title">Image</span>
               </button>
               <button className="quick-start-card" onClick={() => handleChooseFile('video')}>
                 <span className="qs-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                  {QUICK_START_ICONS.video}
                 </span>
                 <span className="qs-title">Video</span>
               </button>
               <button className="quick-start-card" onClick={() => handleChooseFile('pdf')}>
                 <span className="qs-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H8v9"/><path d="M15 17v-8h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/></svg>
+                  {QUICK_START_ICONS.pdf}
                 </span>
                 <span className="qs-title">PDF</span>
               </button>
               <button className="quick-start-card" onClick={() => handleChooseFile('generic')}>
                 <span className="qs-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  {QUICK_START_ICONS.generic}
                 </span>
                 <span className="qs-title">Generic</span>
               </button>
@@ -341,20 +344,6 @@ function toStats(result: OperationResult): StatsSnapshot {
     integrityMatch: result.integrityMatch ?? undefined,
     outputPath: result.outputPath,
   }
-}
-
-function timestampNow(): string {
-  return new Date().toLocaleTimeString()
-}
-
-function toMessage(error: unknown): string {
-  if (typeof error === 'string') {
-    return error
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Unknown error'
 }
 
 export default App

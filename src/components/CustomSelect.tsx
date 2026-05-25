@@ -6,6 +6,22 @@ interface SelectOption<TValue extends string> {
   label: string
 }
 
+const VIEWPORT_PADDING = 12
+const MENU_GAP = 10
+const MAX_MENU_HEIGHT = 320
+const ITEM_HEIGHT = 49
+const MENU_PADDING = 16
+const MIN_DROPDOWN_HEIGHT = 220
+const MIN_WIDTH = 140
+
+interface MenuGeometry {
+  left: number
+  maxHeight: number
+  opensAbove: boolean
+  top: number
+  width: number
+}
+
 interface CustomSelectProps<TValue extends string> {
   id?: string
   label: string
@@ -15,6 +31,9 @@ interface CustomSelectProps<TValue extends string> {
   onChange: (value: TValue) => void
 }
 
+/**
+ * A custom select dropdown component mimicking native select behavior but with custom styling.
+ */
 export function CustomSelect<TValue extends string>({
   id,
   label,
@@ -77,21 +96,19 @@ export function CustomSelect<TValue extends string>({
       }
 
       const rect = trigger.getBoundingClientRect()
-      const viewportPadding = 12
-      const gap = 10
-      const estimatedHeight = Math.min(320, options.length * 49 + 16)
+      const estimatedHeight = Math.min(MAX_MENU_HEIGHT, options.length * ITEM_HEIGHT + MENU_PADDING)
       const menuHeight = menuRef.current?.offsetHeight ?? estimatedHeight
-      const spaceBelow = window.innerHeight - rect.bottom - viewportPadding
-      const spaceAbove = rect.top - viewportPadding
-      const opensAbove = spaceBelow < Math.min(menuHeight, 220) && spaceAbove > spaceBelow
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_PADDING
+      const spaceAbove = rect.top - VIEWPORT_PADDING
+      const opensAbove = spaceBelow < Math.min(menuHeight, MIN_DROPDOWN_HEIGHT) && spaceAbove > spaceBelow
       const availableSpace = opensAbove ? spaceAbove : spaceBelow
-      const maxHeight = Math.max(140, Math.min(availableSpace - gap, 320))
+      const maxHeight = Math.max(MIN_WIDTH, Math.min(availableSpace - MENU_GAP, MAX_MENU_HEIGHT))
       const renderedHeight = Math.min(menuHeight, maxHeight)
-      const maxLeft = window.innerWidth - rect.width - viewportPadding
-      const left = Math.min(Math.max(viewportPadding, rect.left), Math.max(viewportPadding, maxLeft))
+      const maxLeft = window.innerWidth - rect.width - VIEWPORT_PADDING
+      const left = Math.min(Math.max(VIEWPORT_PADDING, rect.left), Math.max(VIEWPORT_PADDING, maxLeft))
       const top = opensAbove
-        ? Math.max(viewportPadding, rect.top - gap - renderedHeight)
-        : Math.min(rect.bottom + gap, window.innerHeight - viewportPadding - renderedHeight)
+        ? Math.max(VIEWPORT_PADDING, rect.top - MENU_GAP - renderedHeight)
+        : Math.min(rect.bottom + MENU_GAP, window.innerHeight - VIEWPORT_PADDING - renderedHeight)
 
       setMenuGeometry({
         left,
@@ -190,12 +207,4 @@ export function CustomSelect<TValue extends string>({
       {menu}
     </div>
   )
-}
-
-interface MenuGeometry {
-  left: number
-  maxHeight: number
-  opensAbove: boolean
-  top: number
-  width: number
 }

@@ -1458,3 +1458,48 @@ input:focus-visible {
     transition-duration: 1ms !important;
   }
 }
+
+/* ===== File Picker Override Section ===== */
+.row-centered {
+  align-items: center;
+}
+.override-mode-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.override-link-active {
+  font-size: 12px;
+  color: var(--accent, #2563eb);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.override-link-muted {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.override-panel {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+.override-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.override-btn {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}

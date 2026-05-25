@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { FileTypeBadge } from './FileTypeBadge'
 import { GlassCard } from './GlassCard'
 import type { FileInfo, FileCategory } from '../types'
+import { formatSize } from '../utils'
+import { FILE_CATEGORIES } from '../constants'
 
+/**
+ * Component for selecting and overriding the compression file type.
+ */
 interface FilePickerProps {
   selectedFile: FileInfo | null
   selectedPath: string | null
@@ -39,22 +44,20 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
             <span className="data-value">{selectedFile.category}</span>
           </div>
           {activeCategory && onOverrideCategory && (
-            <div className="data-row" style={{ alignItems: 'center' }}>
+            <div className="data-row row-centered">
               <span className="data-label">Active Mode</span>
-              <div className="data-value" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="data-value override-mode-container">
                 <span className="capitalize" style={{ fontWeight: 600 }}>{activeCategory}</span>
                 {activeCategory === selectedFile.category ? (
                   <button 
-                    className="button-link"
-                    style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
+                    className="button-link override-link-active"
                     onClick={() => setShowOverride(!showOverride)}
                   >
                     Not the correct type?
                   </button>
                 ) : (
                   <button 
-                    className="button-link"
-                    style={{ fontSize: '12px', color: '#64748b', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
+                    className="button-link override-link-muted"
                     onClick={() => {
                       onOverrideCategory(null)
                       setShowOverride(false)
@@ -67,24 +70,19 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
             </div>
           )}
           {showOverride && activeCategory === selectedFile.category && onOverrideCategory && (
-            <div className="data-row" style={{ background: 'rgba(255,255,255,0.5)', padding: '12px', borderRadius: '8px', marginTop: '4px' }}>
+            <div className="data-row override-panel">
               <span className="data-label">Override</span>
-              <div className="data-value" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['image', 'video', 'pdf', 'generic'].map(cat => (
+              <div className="data-value override-options">
+                {FILE_CATEGORIES.map(cat => (
                   <button 
                     key={cat}
                     onClick={() => {
-                      onOverrideCategory(cat as FileCategory)
+                      if (FILE_CATEGORIES.includes(cat as FileCategory)) {
+                        onOverrideCategory(cat as FileCategory)
+                      }
                       setShowOverride(false)
                     }}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      background: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '13px'
-                    }}
+                    className="override-btn"
                   >
                     {cat}
                   </button>
@@ -110,21 +108,4 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
       )}
     </GlassCard>
   )
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-
-  const units = ['KB', 'MB', 'GB', 'TB']
-  let value = bytes / 1024
-  let unitIndex = 0
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024
-    unitIndex += 1
-  }
-
-  return `${value.toFixed(2)} ${units[unitIndex]}`
 }
