@@ -169,6 +169,8 @@ mod tests {
                 generic_algorithm: None,
                 resize_percent: Some(80),
                 zstd_level: None,
+                use_native_jpeg: None,
+                override_category: None,
             },
         )?;
         let output = PathBuf::from(outcome.output_path);

@@ -44,7 +44,7 @@ pub struct FileDetection {
 pub fn detect_file(path: &Path) -> FileDetection {
     let extension = normalized_extension(path);
     let mut inferred_category = None;
-    
+
     if let Ok(Some(kind)) = infer::get_from_path(path) {
         let mime = kind.mime_type();
         if mime.starts_with("image/") {
@@ -74,12 +74,22 @@ pub fn detect_file(path: &Path) -> FileDetection {
             | "json"
             | "xml"
             | "log"
+            | "doc"
             | "docx"
+            | "ppt"
+            | "pptx"
+            | "xls"
+            | "xlsx"
+            | "bin"
+            | "dat"
             | "zst"
             | "rle"
     ) || category == FileCategory::Generic;
 
-    let is_decompressible = matches!(extension.as_str(), "zst" | "rle" | "shnc" | "sfc" | "huff" | "lz77" | "lz78" | "lzw" | "arith");
+    let is_decompressible = matches!(
+        extension.as_str(),
+        "zst" | "rle" | "shnc" | "sfc" | "huff" | "lz77" | "lz78" | "lzw" | "arith"
+    );
 
     FileDetection {
         extension,
@@ -107,5 +117,30 @@ fn category_from_extension(extension: &str) -> FileCategory {
         "mp4" | "mov" | "mkv" | "avi" => FileCategory::Video,
         "pdf" => FileCategory::Pdf,
         _ => FileCategory::Generic,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{detect_file, FileCategory};
+    use std::path::Path;
+
+    #[test]
+    fn pptx_routes_to_generic_lossless_compression() {
+        let detection = detect_file(Path::new("slides.pptx"));
+
+        assert_eq!(detection.extension, "pptx");
+        assert_eq!(detection.category, FileCategory::Generic);
+        assert!(detection.is_supported_input);
+        assert!(!detection.is_decompressible);
+    }
+
+    #[test]
+    fn arithmetic_outputs_are_marked_decompressible() {
+        let detection = detect_file(Path::new("slides.pptx.arith"));
+
+        assert_eq!(detection.extension, "arith");
+        assert_eq!(detection.category, FileCategory::Generic);
+        assert!(detection.is_decompressible);
     }
 }
