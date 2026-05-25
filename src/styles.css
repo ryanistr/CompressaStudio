@@ -615,9 +615,6 @@ input:focus-visible {
   scroll-margin-top: 180px;
 }
 
-.panel:hover {
-  transform: none;
-}
 
 .file-panel,
 .settings-panel,
