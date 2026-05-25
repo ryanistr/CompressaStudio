@@ -2,6 +2,7 @@ import { useState, type DragEvent } from 'react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { GlassCard } from './GlassCard'
 import type { FileCategory, FileInfo } from '../types'
+import { isTauriRuntime } from '../tauriRuntime'
 
 interface UploadModalProps {
   mode: FileCategory | 'auto'
@@ -13,10 +14,12 @@ interface UploadModalProps {
 export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: UploadModalProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [runtimeMessage, setRuntimeMessage] = useState<string | null>(null)
   const [mismatch, setMismatch] = useState<{ detected: FileCategory, path: string, info: FileInfo } | null>(null)
   const title = `Upload ${mode === 'auto' ? 'File' : mode.charAt(0).toUpperCase() + mode.slice(1)}`
 
   const processPath = async (path: string) => {
+    setRuntimeMessage(null)
     setIsProcessing(true)
     const info = await fetchFileInfo(path)
     setIsProcessing(false)
@@ -30,6 +33,11 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
   }
 
   const handleBrowse = async () => {
+    if (!isTauriRuntime()) {
+      setRuntimeMessage('File browsing is available inside the desktop app runtime.')
+      return
+    }
+
     let filters = undefined
     if (mode === 'image') filters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
     else if (mode === 'video') filters = [{ name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'mov'] }]
@@ -63,6 +71,8 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
     const file = e.dataTransfer.files[0] as File & { path?: string }
     if (file && file.path) {
       await processPath(file.path)
+    } else {
+      setRuntimeMessage('Drag-and-drop file paths are available inside the desktop app runtime.')
     }
   }
 
@@ -108,6 +118,7 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
                   <p className="upload-drop-subtitle">
                     Or use the file browser
                   </p>
+                  {runtimeMessage && <p className="upload-runtime-note">{runtimeMessage}</p>}
                   <div className="upload-modal-actions">
                     <button type="button" className="btn btn-muted upload-action-button" onClick={onClose}>Cancel</button>
                     <button type="button" className="btn btn-primary upload-action-button" onClick={handleBrowse}>

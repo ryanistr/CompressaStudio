@@ -3,7 +3,7 @@
  * @description Application-wide constants and configurations.
  */
 
-import type { AppStatus, CompressionRequest, FileCategory } from './types'
+import type { AppStatus, CompressionRequest, FileCategory, ToolAvailability } from './types'
 
 export const STATUS_LABELS: Record<AppStatus, string> = {
   idle: 'Idle',
@@ -29,6 +29,21 @@ export const FILE_CATEGORY_LABELS: Record<FileCategory, string> = {
 }
 
 export const FILE_CATEGORIES: FileCategory[] = ['image', 'video', 'pdf', 'generic']
+
+export const BROWSER_TOOL_AVAILABILITY: ToolAvailability = {
+  ffmpeg: {
+    name: 'ffmpeg',
+    available: false,
+    command: 'ffmpeg',
+    detail: 'Tool detection runs inside the desktop Tauri app runtime.',
+  },
+  ghostscript: {
+    name: 'ghostscript',
+    available: false,
+    command: 'gs',
+    detail: 'Tool detection runs inside the desktop Tauri app runtime.',
+  },
+}
 
 export interface AlgorithmExplanationData {
   summary: string

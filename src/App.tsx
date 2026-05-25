@@ -1,5 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
-
 import { useEffect, useState } from 'react'
 import { ActionPanel } from './components/ActionPanel'
 import { AlgorithmExplanation } from './components/AlgorithmExplanation'
@@ -19,7 +17,8 @@ import type {
   ToolAvailability,
 } from './types'
 import { timestampNow, toMessage } from './utils'
-import { STATUS_LABELS, DEFAULT_REQUEST } from './constants'
+import { STATUS_LABELS, DEFAULT_REQUEST, BROWSER_TOOL_AVAILABILITY } from './constants'
+import { invokeTauri, isTauriRuntime } from './tauriRuntime'
 import type { ReactNode } from 'react'
 
 const QUICK_START_ICONS: Record<string, ReactNode> = {
@@ -85,8 +84,22 @@ function App() {
 
   useEffect(() => {
     async function loadInitialTools() {
+      if (!isTauriRuntime()) {
+        setTools(BROWSER_TOOL_AVAILABILITY)
+        setLogs((previous) => [
+          {
+            id: crypto.randomUUID(),
+            timestamp: timestampNow(),
+            level: 'info',
+            message: 'Browser preview detected. Tool detection and compression are available inside the desktop app runtime.',
+          },
+          ...previous,
+        ])
+        return
+      }
+
       try {
-        const result = await invoke<ToolAvailability>('get_tool_availability')
+        const result = await invokeTauri<ToolAvailability>('get_tool_availability')
         setTools(result)
       } catch (error) {
         setLogs((previous) => [
@@ -105,8 +118,13 @@ function App() {
   }, [])
 
   async function refreshFileInfo(path: string): Promise<FileInfo | null> {
+    if (!isTauriRuntime()) {
+      pushLog('error', 'File inspection requires the desktop app runtime.')
+      return null
+    }
+
     try {
-      const info = await invoke<FileInfo>('get_file_info', { path })
+      const info = await invokeTauri<FileInfo>('get_file_info', { path })
       setSelectedFile(info)
       setTools(info.tools)
       return info
@@ -138,6 +156,13 @@ function App() {
   }
 
   async function handleCompress() {
+    if (!isTauriRuntime()) {
+      setStatus('error')
+      setStatusText('Compression requires the desktop app runtime.')
+      pushLog('error', 'Compression requires the desktop app runtime.')
+      return
+    }
+
     if (!selectedPath) {
       setStatus('error')
       setStatusText('No file selected.')
@@ -150,7 +175,7 @@ function App() {
     pushLog('info', `Compression started for ${selectedPath}.`)
 
     try {
-      const result = await invoke<OperationResult>('compress_file', {
+      const result = await invokeTauri<OperationResult>('compress_file', {
         path: selectedPath,
         request,
       })
@@ -170,6 +195,13 @@ function App() {
   }
 
   async function handleDecompress() {
+    if (!isTauriRuntime()) {
+      setStatus('error')
+      setStatusText('Decompression requires the desktop app runtime.')
+      pushLog('error', 'Decompression requires the desktop app runtime.')
+      return
+    }
+
     if (!selectedPath) {
       setStatus('error')
       setStatusText('No file selected.')
@@ -182,7 +214,7 @@ function App() {
     pushLog('info', `Decompression started for ${selectedPath}.`)
 
     try {
-      const result = await invoke<OperationResult>('decompress_file', {
+      const result = await invokeTauri<OperationResult>('decompress_file', {
         path: selectedPath,
       })
 
