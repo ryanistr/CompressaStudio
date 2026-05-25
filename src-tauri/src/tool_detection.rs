@@ -1,22 +1,39 @@
+//! External tool availability detection.
+//!
+//! Probes the system PATH for required CLI tools (ffmpeg, Ghostscript) and
+//! reports their availability and version info to the frontend.
+
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
+/// Status of a single external tool.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolStatus {
+    /// Display name of the tool.
     pub name: String,
+    /// Whether the tool was found and executed successfully.
     pub available: bool,
+    /// CLI command used to invoke the tool.
     pub command: String,
+    /// Version string or help message if the tool is missing.
     pub detail: String,
 }
 
+/// Availability status for all external tools used by the application.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolAvailability {
+    /// Status of the ffmpeg video encoder.
     pub ffmpeg: ToolStatus,
+    /// Status of the Ghostscript PDF processor.
     pub ghostscript: ToolStatus,
 }
 
+/// Probes the system for ffmpeg and Ghostscript availability.
+///
+/// Returns a [`ToolAvailability`] snapshot with version details or
+/// installation guidance for each tool.
 pub fn detect_tools() -> ToolAvailability {
     ToolAvailability {
         ffmpeg: detect_tool("ffmpeg", ["-version"], ffmpeg_help()),
@@ -24,6 +41,10 @@ pub fn detect_tools() -> ToolAvailability {
     }
 }
 
+/// Attempts to run `command` with `args` and constructs a [`ToolStatus`].
+///
+/// On success, extracts the first line of stdout/stderr as the version detail.
+/// On failure, populates the detail with `missing_help`.
 fn detect_tool<const N: usize>(
     command: &str,
     args: [&str; N],

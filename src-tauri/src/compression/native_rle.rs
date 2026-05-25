@@ -1,3 +1,7 @@
+//! Native Rle module.
+//!
+//! Handles native rle operations.
+
 use super::{
     create_metadata, infer_restored_output_path, metadata_path_for, read_metadata, write_metadata,
     CompressionMetadata, CompressionOutcome,
@@ -9,6 +13,7 @@ use std::path::{Path, PathBuf};
 
 const RLE_HEADER: &[u8] = b"COMPRESSA_RLE_V1";
 
+/// Compress Rle.
 pub fn compress_rle(input_path: &Path) -> Result<CompressionOutcome> {
     let input = fs::read(input_path).with_context(|| {
         format!(
@@ -39,6 +44,7 @@ pub fn compress_rle(input_path: &Path) -> Result<CompressionOutcome> {
     })
 }
 
+/// Decompress Rle.
 pub fn decompress_rle(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     let mut source = File::open(input_path)
         .with_context(|| format!("Unable to open RLE file: {}", input_path.display()))?;

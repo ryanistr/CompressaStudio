@@ -1,11 +1,24 @@
+//! File hashing utilities for integrity verification.
+//!
+//! Provides SHA-256 digest computation over file contents, used by the
+//! compression pipeline to verify round-trip integrity.
+
 use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+/// Read buffer size for streaming file hashing (64 KiB).
 const BUFFER_SIZE: usize = 64 * 1024;
 
+/// Computes the SHA-256 digest of the file at `path`.
+///
+/// Reads the file in 64 KiB chunks to keep memory usage bounded.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be opened or read.
 pub fn sha256_file(path: &Path) -> Result<String> {
     let mut file = File::open(path)
         .with_context(|| format!("Unable to open file for checksum: {}", path.display()))?;

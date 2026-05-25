@@ -1,3 +1,7 @@
+//! Generic Compressor module.
+//!
+//! Handles generic compressor operations.
+
 use super::{
     create_metadata, infer_restored_output_path, metadata_path_for, read_metadata, write_metadata,
     CompressionMetadata, CompressionOutcome, CompressionRequest, GenericAlgorithm,
@@ -12,6 +16,7 @@ pub const FAST_LEVEL: i32 = 1;
 pub const BALANCED_LEVEL: i32 = 6;
 pub const MAXIMUM_LEVEL: i32 = 19;
 
+/// Compress Generic.
 pub fn compress_generic(
     input_path: &Path,
     request: &CompressionRequest,
@@ -33,6 +38,7 @@ pub fn compress_generic(
     }
 }
 
+/// Compress Zstd.
 pub fn compress_zstd(input_path: &Path, level: i32) -> Result<CompressionOutcome> {
     let output_path = PathBuf::from(format!("{}.zst", input_path.to_string_lossy()));
     let mut reader = BufReader::new(
@@ -66,6 +72,7 @@ pub fn compress_zstd(input_path: &Path, level: i32) -> Result<CompressionOutcome
     })
 }
 
+/// Decompress Zstd.
 pub fn decompress_zstd(
     input_path: &Path,
 ) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {

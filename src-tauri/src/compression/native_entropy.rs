@@ -1,3 +1,7 @@
+//! Native Entropy module.
+//!
+//! Handles native entropy operations.
+
 use super::{
     create_metadata, infer_restored_output_path, metadata_path_for, read_metadata, write_metadata,
     CompressionMetadata, CompressionOutcome,
@@ -267,10 +271,12 @@ fn generate_shannon_codes(freqs: &[u32; 256]) -> HashMap<u8, Vec<bool>> {
     codes
 }
 
+/// Compress Shannon.
 pub fn compress_shannon(input_path: &Path) -> Result<CompressionOutcome> {
     compress_generic(input_path, b"COMPRESSA_SHNC_V1", ".shnc", "Educational Shannon Coding", "Shannon", generate_shannon_codes)
 }
 
+/// Decompress Shannon.
 pub fn decompress_shannon(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     decompress_generic(input_path, b"COMPRESSA_SHNC_V1", "Educational Shannon Coding", generate_shannon_codes)
 }
@@ -324,10 +330,12 @@ fn generate_shannon_fano_codes(freqs: &[u32; 256]) -> HashMap<u8, Vec<bool>> {
     codes
 }
 
+/// Compress Shannon Fano.
 pub fn compress_shannon_fano(input_path: &Path) -> Result<CompressionOutcome> {
     compress_generic(input_path, b"COMPRESSA_SFC_V1", ".sfc", "Educational Shannon-Fano Coding", "Shannon-Fano", generate_shannon_fano_codes)
 }
 
+/// Decompress Shannon Fano.
 pub fn decompress_shannon_fano(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     decompress_generic(input_path, b"COMPRESSA_SFC_V1", "Educational Shannon-Fano Coding", generate_shannon_fano_codes)
 }
@@ -411,10 +419,12 @@ fn generate_huffman_codes(freqs: &[u32; 256]) -> HashMap<u8, Vec<bool>> {
     codes
 }
 
+/// Compress Huffman.
 pub fn compress_huffman(input_path: &Path) -> Result<CompressionOutcome> {
     compress_generic(input_path, b"COMPRESSA_HUFF_V1", ".huff", "Educational Huffman Coding", "Huffman", generate_huffman_codes)
 }
 
+/// Decompress Huffman.
 pub fn decompress_huffman(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     decompress_generic(input_path, b"COMPRESSA_HUFF_V1", "Educational Huffman Coding", generate_huffman_codes)
 }
@@ -570,6 +580,7 @@ impl<'a> ArithmeticDecoder<'a> {
     }
 }
 
+/// Compress Arithmetic.
 pub fn compress_arithmetic(input_path: &Path) -> Result<CompressionOutcome> {
     let input = fs::read(input_path).with_context(|| {
         format!("Unable to read input file for Arithmetic: {}", input_path.display())
@@ -614,6 +625,7 @@ pub fn compress_arithmetic(input_path: &Path) -> Result<CompressionOutcome> {
     })
 }
 
+/// Decompress Arithmetic.
 pub fn decompress_arithmetic(input_path: &Path) -> Result<(PathBuf, String, Option<CompressionMetadata>)> {
     let raw = fs::read(input_path).with_context(|| {
         format!("Unable to open Arithmetic file: {}", input_path.display())

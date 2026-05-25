@@ -1,9 +1,14 @@
+//! Pdf Compressor module.
+//!
+//! Handles pdf compressor operations.
+
 use super::{unique_output_path, CompressionOutcome, CompressionRequest, PdfPreset};
 use crate::tool_detection::detect_tools;
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use std::process::Command;
 
+/// Compress Pdf.
 pub fn compress_pdf(input_path: &Path, request: &CompressionRequest) -> Result<CompressionOutcome> {
     let tools = detect_tools();
     if !tools.ghostscript.available {

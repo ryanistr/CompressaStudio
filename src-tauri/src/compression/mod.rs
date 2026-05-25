@@ -1,3 +1,7 @@
+//! Mod module.
+//!
+//! Handles mod operations.
+
 pub mod generic_compressor;
 pub mod image_compressor;
 pub mod native_dict;
@@ -115,6 +119,7 @@ pub struct CompressionMetadata {
     pub algorithm: String,
 }
 
+/// Compress.
 pub fn compress(input_path: &Path, request: CompressionRequest) -> Result<OperationResult> {
     validate_input_file(input_path)?;
 
@@ -175,6 +180,7 @@ pub fn compress(input_path: &Path, request: CompressionRequest) -> Result<Operat
     })
 }
 
+/// Decompress.
 pub fn decompress(input_path: &Path) -> Result<OperationResult> {
     validate_input_file(input_path)?;
     let extension = normalized_extension(input_path);
@@ -240,6 +246,7 @@ pub fn decompress(input_path: &Path) -> Result<OperationResult> {
     })
 }
 
+/// Validate Input File.
 pub fn validate_input_file(path: &Path) -> Result<()> {
     if !path.exists() {
         return Err(anyhow!("File not found: {}", path.display()));
@@ -252,6 +259,7 @@ pub fn validate_input_file(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Ensure Output Exists.
 pub fn ensure_output_exists(path: &Path) -> Result<()> {
     if !path.exists() {
         return Err(anyhow!(
@@ -267,6 +275,7 @@ pub fn ensure_output_exists(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Calculate Compression Ratio.
 pub fn calculate_compression_ratio(output_size: u64, original_size: u64) -> f64 {
     if original_size == 0 {
         return 0.0;
@@ -275,6 +284,7 @@ pub fn calculate_compression_ratio(output_size: u64, original_size: u64) -> f64 
     output_size as f64 / original_size as f64 * 100.0
 }
 
+/// Calculate Space Saved.
 pub fn calculate_space_saved(output_size: u64, original_size: u64) -> f64 {
     if original_size == 0 {
         return 0.0;
@@ -283,6 +293,7 @@ pub fn calculate_space_saved(output_size: u64, original_size: u64) -> f64 {
     (original_size as f64 - output_size as f64) / original_size as f64 * 100.0
 }
 
+/// Metadata Path For.
 pub fn metadata_path_for(output_path: &Path) -> PathBuf {
     PathBuf::from(format!(
         "{}{}",
@@ -291,6 +302,7 @@ pub fn metadata_path_for(output_path: &Path) -> PathBuf {
     ))
 }
 
+/// Write Metadata.
 pub fn write_metadata(path: &Path, metadata: &CompressionMetadata) -> Result<()> {
     let content = serde_json::to_vec_pretty(metadata).context("Failed to serialize metadata")?;
     fs::write(path, content)
@@ -298,11 +310,13 @@ pub fn write_metadata(path: &Path, metadata: &CompressionMetadata) -> Result<()>
     Ok(())
 }
 
+/// Read Metadata.
 pub fn read_metadata(path: &Path) -> Option<CompressionMetadata> {
     let raw = fs::read(path).ok()?;
     serde_json::from_slice::<CompressionMetadata>(&raw).ok()
 }
 
+/// Create Metadata.
 pub fn create_metadata(input_path: &Path, algorithm: &str) -> Result<CompressionMetadata> {
     Ok(CompressionMetadata {
         original_file_name: input_path
@@ -317,6 +331,7 @@ pub fn create_metadata(input_path: &Path, algorithm: &str) -> Result<Compression
     })
 }
 
+/// Infer Restored Output Path.
 pub fn infer_restored_output_path(input_path: &Path) -> PathBuf {
     let parent = input_path.parent().unwrap_or_else(|| Path::new("."));
     let base_name = input_path
@@ -340,6 +355,7 @@ pub fn infer_restored_output_path(input_path: &Path) -> PathBuf {
     }
 }
 
+/// Unique Output Path.
 pub fn unique_output_path(parent: &Path, stem: &str, extension: &str) -> PathBuf {
     let normalized_stem = if stem.is_empty() { "compressed" } else { stem };
     let extension = extension.trim_start_matches('.');
