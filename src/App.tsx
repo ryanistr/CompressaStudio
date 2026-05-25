@@ -222,7 +222,7 @@ function App() {
               <span className="brand-subtitle">Liquid compression workspace</span>
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="topbar-actions">
             <div className={`status-badge status-${status}`}>
               <span className="status-dot" />
               <span>{STATUS_LABELS[status]}</span>

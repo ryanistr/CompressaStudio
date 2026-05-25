@@ -1,75 +1,175 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import type { LogEntry } from '../types'
 
 interface LogDropdownProps {
   logs: LogEntry[]
 }
 
+const MENU_GAP = 14
+const VIEWPORT_PADDING = 16
+const MENU_MAX_WIDTH = 420
+const MENU_MAX_HEIGHT = 420
+const MENU_MIN_HEIGHT = 180
+
 export function LogDropdown({ logs }: LogDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [menuGeometry, setMenuGeometry] = useState<MenuGeometry | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    if (!isOpen) {
+      return
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node
+      if (!dropdownRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false)
+        setMenuGeometry(null)
       }
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        setMenuGeometry(null)
+      }
     }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const frameIds: number[] = []
+
+    function updateMenuGeometry() {
+      const trigger = triggerRef.current
+      if (!trigger) {
+        return
+      }
+
+      const rect = trigger.getBoundingClientRect()
+      const width = Math.min(MENU_MAX_WIDTH, window.innerWidth - VIEWPORT_PADDING * 2)
+      const maxHeight = Math.max(
+        MENU_MIN_HEIGHT,
+        Math.min(MENU_MAX_HEIGHT, window.innerHeight - rect.bottom - MENU_GAP - VIEWPORT_PADDING),
+      )
+      const left = Math.min(
+        Math.max(VIEWPORT_PADDING, rect.right - width),
+        window.innerWidth - width - VIEWPORT_PADDING,
+      )
+      const top = rect.bottom + MENU_GAP
+
+      setMenuGeometry({
+        left,
+        maxHeight,
+        top,
+        width,
+      })
+    }
+
+    updateMenuGeometry()
+    frameIds.push(window.requestAnimationFrame(updateMenuGeometry))
+
+    window.addEventListener('resize', updateMenuGeometry)
+    window.addEventListener('scroll', updateMenuGeometry, true)
+
+    return () => {
+      frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId))
+      window.removeEventListener('resize', updateMenuGeometry)
+      window.removeEventListener('scroll', updateMenuGeometry, true)
+    }
+  }, [isOpen])
+
+  const menuStyle: CSSProperties | undefined = menuGeometry
+    ? {
+        left: menuGeometry.left,
+        maxHeight: menuGeometry.maxHeight,
+        top: menuGeometry.top,
+        width: menuGeometry.width,
+      }
+    : undefined
+
+  const menu =
+    isOpen && menuGeometry
+      ? createPortal(
+          <div
+            className="glass-panel log-dropdown-menu"
+            ref={menuRef}
+            role="dialog"
+            aria-label="Operation history"
+            style={menuStyle}
+          >
+            <header className="log-dropdown-header">
+              <div>
+                <h3>Operation History</h3>
+                <p>{logs.length} entries</p>
+              </div>
+            </header>
+
+            {logs.length === 0 ? (
+              <div className="log-dropdown-empty">
+                <span>No logs yet.</span>
+              </div>
+            ) : (
+              <ul className="log-list log-dropdown-list">
+                {logs.map((log) => (
+                  <li key={log.id} className={`log-item log-${log.level}`}>
+                    <div className="log-meta">
+                      <span>{log.timestamp}</span>
+                      <span>{log.level.toUpperCase()}</span>
+                    </div>
+                    <p>{log.message}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>,
+          document.body,
+        )
+      : null
+
   return (
-    <div className="log-dropdown-container" ref={dropdownRef} style={{ position: 'relative' }}>
-      <button 
-        className="workflow-link" 
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ margin: 0, height: '48px', minHeight: '48px', fontSize: '13px', background: isOpen ? 'rgba(var(--white-rgb), 0.7)' : undefined }}
+    <div className="log-dropdown-container" ref={dropdownRef}>
+      <button
+        type="button"
+        className="topbar-control log-trigger"
+        ref={triggerRef}
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        onClick={() => {
+          if (isOpen) {
+            setIsOpen(false)
+            setMenuGeometry(null)
+            return
+          }
+          setIsOpen(true)
+        }}
       >
         Logs
+        <span className="log-count">{logs.length}</span>
       </button>
-
-      {isOpen && (
-        <div 
-          className="glass-panel" 
-          style={{ 
-            position: 'absolute', 
-            top: '100%', 
-            right: 0, 
-            marginTop: '8px', 
-            width: '400px', 
-            maxHeight: '400px', 
-            overflowY: 'auto', 
-            borderRadius: '12px',
-            zIndex: 1000,
-            padding: '16px',
-            boxShadow: 'var(--glass-shadow)'
-          }}
-        >
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--ink)' }}>Operation History</h3>
-          {logs.length === 0 ? (
-            <div className="empty-state" style={{ minHeight: '100px', padding: '16px' }}>
-              <span>No logs yet.</span>
-            </div>
-          ) : (
-            <ul className="log-list" style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '8px' }}>
-              {logs.map((log) => (
-                <li key={log.id} className={`log-item log-${log.level}`} style={{ padding: '12px', borderRadius: '8px', fontSize: '13px' }}>
-                  <div className="log-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', color: 'var(--muted)', fontWeight: 'bold' }}>
-                    <span>{log.timestamp}</span>
-                    <span>{log.level.toUpperCase()}</span>
-                  </div>
-                  <p style={{ margin: 0, color: 'var(--ink-soft)', lineHeight: 1.4, wordBreak: 'break-word' }}>{log.message}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {menu}
     </div>
   )
+}
+
+interface MenuGeometry {
+  left: number
+  maxHeight: number
+  top: number
+  width: number
 }
