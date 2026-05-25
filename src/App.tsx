@@ -1,11 +1,12 @@
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
+
 import { useEffect, useState } from 'react'
 import { ActionPanel } from './components/ActionPanel'
 import { AlgorithmExplanation } from './components/AlgorithmExplanation'
 import { CompressionSettings } from './components/CompressionSettings'
 import { FilePicker } from './components/FilePicker'
 import { LogDropdown } from './components/LogDropdown'
+import { UploadModal } from './components/UploadModal'
 import { StatsPanel } from './components/StatsPanel'
 import type {
   AppStatus,
@@ -42,6 +43,7 @@ const QUICK_START_ICONS: Record<string, ReactNode> = {
 function App() {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null)
+  const [uploadModalMode, setUploadModalMode] = useState<FileCategory | 'auto' | null>(null)
   const [request, setRequest] = useState<CompressionRequest>(DEFAULT_REQUEST)
   const [status, setStatus] = useState<AppStatus>('idle')
   const [statusText, setStatusText] = useState('Ready for all-in-one compression.')
@@ -115,41 +117,24 @@ function App() {
     }
   }
 
-  async function handleChooseFile(mode?: FileCategory) {
-    try {
-      let filters = undefined
-      if (mode === 'image') filters = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
-      else if (mode === 'video') filters = [{ name: 'Videos', extensions: ['mp4', 'mkv', 'avi', 'mov'] }]
-      else if (mode === 'pdf') filters = [{ name: 'PDF', extensions: ['pdf'] }]
+  function handleChooseFile(mode?: FileCategory | 'auto') {
+    setUploadModalMode(mode ?? 'auto')
+  }
 
-      const result = await open({
-        title: 'Choose a file to compress or decompress',
-        multiple: false,
-        directory: false,
-        filters
-      })
+  function handleFileConfirmed(path: string, info: FileInfo) {
+    setSelectedPath(path)
+    setStatus('idle')
+    setStatusText('File selected.')
+    setUploadModalMode(null)
 
-      if (!result || Array.isArray(result)) {
-        return
-      }
-
-      setSelectedPath(result)
-      setStatus('idle')
-      setStatusText('File selected.')
-
-      const info = await refreshFileInfo(result)
-      if (!info) {
-        return
-      }
-
-      setStats({
-        originalSize: info.sizeBytes,
-        sourceSha256: info.sha256,
-      })
-      pushLog('success', `Selected ${info.fileName} as ${info.category} input.`)
-    } catch (error) {
-      handleError(error, 'Failed to choose file')
-    }
+    setSelectedFile(info)
+    setTools(info.tools)
+    
+    setStats({
+      originalSize: info.sizeBytes,
+      sourceSha256: info.sha256,
+    })
+    pushLog('success', `Selected ${info.fileName} as ${info.category} input.`)
   }
 
   async function handleCompress() {
@@ -256,7 +241,7 @@ function App() {
             <h2>Quick Start</h2>
             <p className="quick-start-subtitle">Select a compression mode or let us auto-detect the optimal pipeline</p>
             <div className="quick-start-grid">
-              <button className="quick-start-card" onClick={() => handleChooseFile(undefined)}>
+              <button className="quick-start-card" onClick={() => handleChooseFile('auto')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.auto}
                 </span>
@@ -325,6 +310,15 @@ function App() {
             <AlgorithmExplanation category={category} request={request} />
           </div>
         </section>
+
+        {uploadModalMode && (
+          <UploadModal 
+            mode={uploadModalMode} 
+            onClose={() => setUploadModalMode(null)} 
+            onFileConfirmed={handleFileConfirmed} 
+            fetchFileInfo={refreshFileInfo} 
+          />
+        )}
       </main>
     </div>
   )
