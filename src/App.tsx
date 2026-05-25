@@ -318,7 +318,7 @@ function App() {
           </div>
 
           <div className="dashboard-column dashboard-right">
-            <StatsPanel stats={stats} />
+            {status === 'success' && stats.outputSize !== undefined && <StatsPanel stats={stats} />}
             <AlgorithmExplanation category={category} request={request} />
             <LogPanel logs={logs} />
           </div>
