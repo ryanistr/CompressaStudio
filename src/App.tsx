@@ -5,7 +5,7 @@ import { ActionPanel } from './components/ActionPanel'
 import { AlgorithmExplanation } from './components/AlgorithmExplanation'
 import { CompressionSettings } from './components/CompressionSettings'
 import { FilePicker } from './components/FilePicker'
-import { LogPanel } from './components/LogPanel'
+import { LogDropdown } from './components/LogDropdown'
 import { StatsPanel } from './components/StatsPanel'
 import type {
   AppStatus,
@@ -237,9 +237,12 @@ function App() {
               <span className="brand-subtitle">Liquid compression workspace</span>
             </span>
           </div>
-          <div className={`status-badge status-${status}`}>
-            <span className="status-dot" />
-            <span>{STATUS_LABELS[status]}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className={`status-badge status-${status}`}>
+              <span className="status-dot" />
+              <span>{STATUS_LABELS[status]}</span>
+            </div>
+            <LogDropdown logs={logs} />
           </div>
         </header>
 
@@ -320,7 +323,6 @@ function App() {
           <div className="dashboard-column dashboard-right">
             {status === 'success' && stats.outputSize !== undefined && <StatsPanel stats={stats} />}
             <AlgorithmExplanation category={category} request={request} />
-            <LogPanel logs={logs} />
           </div>
         </section>
       </main>
