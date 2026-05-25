@@ -268,7 +268,7 @@ input:focus-visible {
   position: sticky;
   top: 18px;
   z-index: 80;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .brand-section {

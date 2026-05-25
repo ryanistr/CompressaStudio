@@ -442,11 +442,9 @@ impl ArithModel {
         let mut total = 0u64;
         for &freq in freqs { total += freq as u64; }
         if total > 0 && total >= ARITH_MAX_FREQ as u64 {
-            let mut current_total = 0;
             for i in 0..256 {
                 let scaled = ((freqs[i] as u64 * (ARITH_MAX_FREQ as u64 - 256)) / total) as u32;
                 f[i] = if freqs[i] > 0 { scaled.max(1) } else { 0 };
-                current_total += f[i];
             }
         } else {
             f.copy_from_slice(freqs);

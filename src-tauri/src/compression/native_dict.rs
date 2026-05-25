@@ -363,8 +363,8 @@ fn decode_lzw(input: &[u8], original_len: usize) -> Result<Vec<u8>> {
     let mut chunks = input.chunks_exact(4);
     
     if let Some(first_chunk) = chunks.next() {
-        let mut old_code = u32::from_be_bytes(first_chunk[0..4].try_into().unwrap());
-        let mut old_code_usize = old_code as usize;
+        let mut old_code_usize =
+            u32::from_be_bytes(first_chunk[0..4].try_into().unwrap()) as usize;
         if old_code_usize >= dict.len() {
             anyhow::bail!("Invalid LZW code");
         }
@@ -390,7 +390,6 @@ fn decode_lzw(input: &[u8], original_len: usize) -> Result<Vec<u8>> {
             new_entry.push(entry[0]);
             dict.push(new_entry);
             
-            old_code = new_code;
             old_code_usize = new_code_usize;
         }
     }
