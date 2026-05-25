@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type WheelEvent } from 'react'
 import { createPortal } from 'react-dom'
 import type { LogEntry } from '../types'
 
@@ -103,6 +103,19 @@ export function LogDropdown({ logs }: LogDropdownProps) {
       }
     : undefined
 
+  function handleLogWheel(event: WheelEvent<HTMLUListElement>) {
+    event.stopPropagation()
+
+    const list = event.currentTarget
+    const cannotScroll = list.scrollHeight <= list.clientHeight
+    const atTop = list.scrollTop <= 0
+    const atBottom = Math.ceil(list.scrollTop + list.clientHeight) >= list.scrollHeight
+
+    if (cannotScroll || (atTop && event.deltaY < 0) || (atBottom && event.deltaY > 0)) {
+      event.preventDefault()
+    }
+  }
+
   const menu =
     isOpen && menuGeometry
       ? createPortal(
@@ -125,7 +138,7 @@ export function LogDropdown({ logs }: LogDropdownProps) {
                 <span>No logs yet.</span>
               </div>
             ) : (
-              <ul className="log-list log-dropdown-list">
+              <ul className="log-list log-dropdown-list" onWheel={handleLogWheel}>
                 {logs.map((log) => (
                   <li key={log.id} className={`log-item log-${log.level}`}>
                     <div className="log-meta">

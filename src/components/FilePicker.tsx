@@ -12,11 +12,26 @@ interface FilePickerProps {
   selectedFile: FileInfo | null
   selectedPath: string | null
   activeCategory?: FileCategory
+  onChooseFile?: () => void
   onOverrideCategory?: (category: FileCategory | null) => void
 }
 
-export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverrideCategory }: FilePickerProps) {
+export function FilePicker({
+  selectedFile,
+  selectedPath,
+  activeCategory,
+  onChooseFile,
+  onOverrideCategory,
+}: FilePickerProps) {
   const [showOverride, setShowOverride] = useState(false)
+  const emptyContent = (
+    <>
+      <span>No file selected yet.</span>
+      <span className="muted-text">Choose an image, video, PDF, document, or generic file.</span>
+      {selectedPath && <span className="monospace">{selectedPath}</span>}
+    </>
+  )
+
   return (
     <GlassCard
       id="file-selection"
@@ -103,11 +118,13 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
           </div>
         </div>
       ) : (
-        <div className="empty-state">
-          <span>No file selected yet.</span>
-          <span className="muted-text">Choose an image, video, PDF, document, or generic file.</span>
-          {selectedPath && <span className="monospace">{selectedPath}</span>}
-        </div>
+        onChooseFile ? (
+          <button type="button" className="empty-state file-empty-action" onClick={onChooseFile}>
+            {emptyContent}
+          </button>
+        ) : (
+          <div className="empty-state">{emptyContent}</div>
+        )
       )}
     </GlassCard>
   )

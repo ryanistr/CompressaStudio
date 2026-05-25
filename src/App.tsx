@@ -312,6 +312,7 @@ function App() {
               selectedFile={selectedFile}
               selectedPath={selectedPath}
               activeCategory={category}
+              onChooseFile={() => handleChooseFile('auto')}
               onOverrideCategory={(overrideCategory) =>
                 setRequest({ ...request, overrideCategory })
               }

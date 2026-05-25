@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react'
+import { useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { GlassCard } from './GlassCard'
 import type { FileCategory, FileInfo } from '../types'
@@ -55,6 +55,23 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
     }
   }
 
+  const handleDropzoneClick = (event: MouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('button')) {
+      return
+    }
+
+    void handleBrowse()
+  }
+
+  const handleDropzoneKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return
+    }
+
+    event.preventDefault()
+    void handleBrowse()
+  }
+
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -77,8 +94,14 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
   }
 
   return (
-    <div className="upload-modal-backdrop">
-      <div className="upload-modal-shell" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="upload-modal-backdrop" onClick={onClose}>
+      <div
+        className="upload-modal-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(event) => event.stopPropagation()}
+      >
         <GlassCard
           title={title}
           subtitle="Drag and drop your file or browse."
@@ -104,9 +127,13 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
           ) : (
             <div
               className={`upload-dropzone ${isDragging ? 'upload-dropzone-active' : ''}`.trim()}
+              role="button"
+              tabIndex={0}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
+              onClick={handleDropzoneClick}
+              onKeyDown={handleDropzoneKeyDown}
             >
               {isProcessing ? (
                 <div className="upload-processing">Processing file...</div>
