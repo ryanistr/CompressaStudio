@@ -231,41 +231,40 @@ function App() {
           </div>
         </header>
 
-        {/* Status Strip integrated into header flow */}
         <section className={`glass-panel status-strip status-${status}`}>
           <span className="status-text">{statusText}</span>
         </section>
 
         {!selectedFile && (
-          <section className="quick-start-section">
+          <section className="glass-panel quick-start-section">
             <h2>Quick Start</h2>
             <p className="quick-start-subtitle">Select a compression mode or let us auto-detect the optimal pipeline</p>
             <div className="quick-start-grid">
-              <button className="quick-start-card" onClick={() => handleChooseFile('auto')}>
+              <button type="button" className="quick-start-card" onClick={() => handleChooseFile('auto')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.auto}
                 </span>
                 <span className="qs-title">Auto Detect</span>
               </button>
-              <button className="quick-start-card" onClick={() => handleChooseFile('image')}>
+              <button type="button" className="quick-start-card" onClick={() => handleChooseFile('image')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.image}
                 </span>
                 <span className="qs-title">Image</span>
               </button>
-              <button className="quick-start-card" onClick={() => handleChooseFile('video')}>
+              <button type="button" className="quick-start-card" onClick={() => handleChooseFile('video')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.video}
                 </span>
                 <span className="qs-title">Video</span>
               </button>
-              <button className="quick-start-card" onClick={() => handleChooseFile('pdf')}>
+              <button type="button" className="quick-start-card" onClick={() => handleChooseFile('pdf')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.pdf}
                 </span>
                 <span className="qs-title">PDF</span>
               </button>
-              <button className="quick-start-card" onClick={() => handleChooseFile('generic')}>
+              <button type="button" className="quick-start-card" onClick={() => handleChooseFile('generic')}>
                 <span className="qs-icon">
                   {QUICK_START_ICONS.generic}
                 </span>

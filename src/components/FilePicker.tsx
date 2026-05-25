@@ -47,17 +47,19 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
             <div className="data-row row-centered">
               <span className="data-label">Active Mode</span>
               <div className="data-value override-mode-container">
-                <span className="capitalize" style={{ fontWeight: 600 }}>{activeCategory}</span>
+                <span className="active-category-value">{activeCategory}</span>
                 {activeCategory === selectedFile.category ? (
-                  <button 
-                    className="button-link override-link-active"
+                  <button
+                    type="button"
+                    className="override-link-active"
                     onClick={() => setShowOverride(!showOverride)}
                   >
                     Not the correct type?
                   </button>
                 ) : (
-                  <button 
-                    className="button-link override-link-muted"
+                  <button
+                    type="button"
+                    className="override-link-muted"
                     onClick={() => {
                       onOverrideCategory(null)
                       setShowOverride(false)
@@ -74,7 +76,8 @@ export function FilePicker({ selectedFile, selectedPath, activeCategory, onOverr
               <span className="data-label">Override</span>
               <div className="data-value override-options">
                 {FILE_CATEGORIES.map(cat => (
-                  <button 
+                  <button
+                    type="button"
                     key={cat}
                     onClick={() => {
                       if (FILE_CATEGORIES.includes(cat as FileCategory)) {

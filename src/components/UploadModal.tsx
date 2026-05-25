@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type DragEvent } from 'react'
 import { open } from '@tauri-apps/plugin-dialog'
 import { GlassCard } from './GlassCard'
 import type { FileCategory, FileInfo } from '../types'
@@ -14,6 +14,7 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [mismatch, setMismatch] = useState<{ detected: FileCategory, path: string, info: FileInfo } | null>(null)
+  const title = `Upload ${mode === 'auto' ? 'File' : mode.charAt(0).toUpperCase() + mode.slice(1)}`
 
   const processPath = async (path: string) => {
     setIsProcessing(true)
@@ -22,10 +23,8 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
     if (!info) return
 
     if (mode !== 'auto' && info.category !== mode && info.category !== 'generic') {
-      // Mismatch detected (ignoring generic fallback mismatches)
       setMismatch({ detected: info.category, path, info })
     } else {
-      // It's fine, proceed
       onFileConfirmed(path, info)
     }
   }
@@ -40,7 +39,7 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
       title: 'Choose a file to compress',
       multiple: false,
       directory: false,
-      filters
+      filters,
     })
 
     if (result && !Array.isArray(result)) {
@@ -48,17 +47,17 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
     }
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
   }
 
-  const handleDrop = async (e: React.DragEvent) => {
+  const handleDrop = async (e: DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files[0] as File & { path?: string }
@@ -68,57 +67,50 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999, 
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)'
-    }}>
-      <div style={{ width: '100%', maxWidth: '500px', animation: 'scaleUp 0.2s ease-out' }}>
-        <GlassCard title={`Upload ${mode === 'auto' ? 'File' : mode.charAt(0).toUpperCase() + mode.slice(1)}`} subtitle="Drag and drop your file or browse.">
+    <div className="upload-modal-backdrop">
+      <div className="upload-modal-shell" role="dialog" aria-modal="true" aria-label={title}>
+        <GlassCard
+          title={title}
+          subtitle="Drag and drop your file or browse."
+          className="upload-modal-card"
+        >
           {mismatch ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <h3 style={{ color: 'var(--coral)', marginBottom: '12px' }}>Format Mismatch Detected</h3>
-              <p style={{ marginBottom: '24px', fontSize: '14px', color: 'var(--ink)' }}>
+            <div className="upload-modal-content upload-mismatch">
+              <h3>Format Mismatch Detected</h3>
+              <p>
                 You selected <strong>{mode}</strong> mode, but dropped a <strong>{mismatch.detected}</strong> file.
                 <br /><br />
                 We will automatically adjust and compress this as a <strong>{mismatch.detected}</strong>.
               </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <button className="workflow-link" style={{ background: 'rgba(var(--white-rgb), 0.6)' }} onClick={() => setMismatch(null)}>
+              <div className="upload-modal-actions">
+                <button type="button" className="btn btn-muted upload-action-button" onClick={() => setMismatch(null)}>
                   Cancel & Reselect
                 </button>
-                <button className="workflow-link" style={{ background: 'var(--accent)', color: 'white' }} onClick={() => onFileConfirmed(mismatch.path, mismatch.info)}>
+                <button type="button" className="btn btn-primary upload-action-button" onClick={() => onFileConfirmed(mismatch.path, mismatch.info)}>
                   Proceed as {mismatch.detected}
                 </button>
               </div>
             </div>
           ) : (
-            <div 
+            <div
+              className={`upload-dropzone ${isDragging ? 'upload-dropzone-active' : ''}`.trim()}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              style={{
-                border: `2px dashed ${isDragging ? 'var(--accent)' : 'rgba(72, 104, 142, 0.3)'}`,
-                borderRadius: '12px',
-                padding: '40px 20px',
-                textAlign: 'center',
-                background: isDragging ? 'rgba(var(--blue-rgb), 0.05)' : 'transparent',
-                transition: 'all 0.2s ease'
-              }}
             >
               {isProcessing ? (
-                <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Processing file...</div>
+                <div className="upload-processing">Processing file...</div>
               ) : (
                 <>
-                  <p style={{ marginBottom: '16px', color: 'var(--ink-soft)' }}>
+                  <p className="upload-drop-title">
                     {isDragging ? 'Drop it here!' : `Drag and drop your ${mode === 'auto' ? 'file' : mode} here`}
                   </p>
-                  <p style={{ marginBottom: '24px', fontSize: '12px', color: 'var(--muted)' }}>
+                  <p className="upload-drop-subtitle">
                     Or use the file browser
                   </p>
-                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                    <button className="workflow-link" onClick={onClose}>Cancel</button>
-                    <button className="workflow-link" style={{ background: 'var(--accent)', color: 'white' }} onClick={handleBrowse}>
+                  <div className="upload-modal-actions">
+                    <button type="button" className="btn btn-muted upload-action-button" onClick={onClose}>Cancel</button>
+                    <button type="button" className="btn btn-primary upload-action-button" onClick={handleBrowse}>
                       Browse Files
                     </button>
                   </div>
@@ -128,12 +120,6 @@ export function UploadModal({ mode, onClose, onFileConfirmed, fetchFileInfo }: U
           )}
         </GlassCard>
       </div>
-      <style>{`
-        @keyframes scaleUp {
-          from { transform: scale(0.95); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
     </div>
   )
 }
