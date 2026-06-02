@@ -29,8 +29,6 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
-
-# AI tooling metadata
 .agents/
 .codex/
 .antigravitycli/
