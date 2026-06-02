@@ -18,7 +18,6 @@ export function AlgorithmExplanation({ category, request }: AlgorithmExplanation
     <GlassCard
       id="algorithm-explanation"
       title="Algorithm Explanation"
-      subtitle="This panel mirrors the compression concepts emphasized in the Materi slides."
       className="explanation-panel"
     >
       <div className="explanation-copy">
